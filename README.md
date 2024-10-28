@@ -4,6 +4,7 @@
 ## Basic info
 
 **Python version = 3.11**
+
 **Always update requirements.txt file whenever some packages are updated or included or removed**
 `pip freeze > requirements.txt`
 
