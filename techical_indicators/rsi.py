@@ -3,7 +3,7 @@ import pandas as pd
 
 
 class RSI:
-    def __init__(self, data: pd.DataFrame, period=14):
+    def __init__(self, data: np.ndarray, period=14):
         self.data = data
         self.period = period
         self.rsi = self.calculate_rsi()
