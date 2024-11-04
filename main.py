@@ -1,10 +1,16 @@
 from utils import download_history
 import matplotlib.pyplot as plt
+from abc import ABC, abstractmethod
+
+class StockParams:
+    def __init__(self) -> None:
+        pass
+         
 
 class Stock:
     def __init__(self, ticker, start=None, end=None, period='1d', interval='1m'):
-        self.ticker = ticker
-        self.data = download_history(ticker,
+        self.__ticker = ticker
+        self.__data = download_history(self.__ticker,
                                      start=start, end=end,
                                      period=period, interval=interval)
 
@@ -13,9 +19,21 @@ class Stock:
         plt.show()
 
     def __getitem__(self, key):
-        return self.data[key] 
+        return self.__data[key] 
+    
+    def __call__(self, *args, **kwds):
+        self.plot(self['Close'])
+
+
+class Indicator(ABC):
+    def __init__(self) -> None:
+        pass
+
+    @abstractmethod
+    def __call__(self, stock: Stock):
+        raise NotImplementedError
 
 
 if __name__ == "__main__":
     AAPL = Stock('AAPL')
-    AAPL.plot('Close')
+    AAPL()
