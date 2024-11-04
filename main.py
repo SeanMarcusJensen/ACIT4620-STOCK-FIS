@@ -20,9 +20,6 @@ class Stock:
 
     def __getitem__(self, key):
         return self.__data[key] 
-    
-    def __call__(self, *args, **kwds):
-        self.plot(self['Close'])
 
 
 class Indicator(ABC):
@@ -36,4 +33,4 @@ class Indicator(ABC):
 
 if __name__ == "__main__":
     AAPL = Stock('AAPL')
-    AAPL()
+    AAPL.plot('Close')
