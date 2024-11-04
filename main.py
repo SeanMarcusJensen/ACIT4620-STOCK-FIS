@@ -9,8 +9,8 @@ from typing import List
 
 class StockParams:
     def __init__(self) -> None:
-        pass
-         
+        pass 
+
 
 class Stock:
     def __init__(self, ticker, start=None, end=None, period='1d', interval='1m'):
@@ -32,6 +32,7 @@ class Stock:
             return self.__data[key] 
         except KeyError:
             return None
+
 
 class Indicator(ABC):
     name: str
@@ -133,7 +134,6 @@ class OBV(Indicator):
         return dataframe
 
 
-
 class IndicatorWrapper(Indicator):
     def __init__(self, indicator: List[Indicator]) -> None:
         self.__indicator = indicator
@@ -149,7 +149,6 @@ class IndicatorWrapper(Indicator):
 
 if __name__ == "__main__":
     AAPL = Stock('AAPL')
-
     rsi = RSI()(AAPL)
     macd = MACD()(AAPL)
     obv = OBV()(AAPL)
@@ -160,13 +159,10 @@ if __name__ == "__main__":
         plt.plot(indicator)
         plt.show()
 
-
     indicators = IndicatorWrapper([RSI()])
     indicaotrs_df = indicators(AAPL)
     print(indicaotrs_df.head())
 
     plt.plot(AAPL['Close'])
     plt.show()
-
-
 
