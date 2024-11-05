@@ -21,8 +21,8 @@ def download_history(ticker: str, **kwargs) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Stock history data.
     """
-    ticker = yf.Ticker(ticker)
-    data = ticker.history(**kwargs)
+    stock = yf.Ticker(ticker)
+    data = stock.history(**kwargs)
     return data
 
 

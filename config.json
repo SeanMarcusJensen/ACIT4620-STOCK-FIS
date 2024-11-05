@@ -1,0 +1,7 @@
+{
+  "ticker": "AAPL",
+  "start": "2024-11-01",
+  "end": "2024-11-05",
+  "period": "1d",
+  "interval": "5m"
+}
