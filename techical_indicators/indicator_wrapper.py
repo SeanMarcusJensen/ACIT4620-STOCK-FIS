@@ -6,6 +6,8 @@ from typing import List
 
 
 class IndicatorWrapper(Indicator):
+    column_names = []
+
     def __init__(self, indicator: List[Indicator], fillna: float | None = None) -> None:
         self.__indicator = indicator
         self.__fillna = fillna
@@ -15,6 +17,7 @@ class IndicatorWrapper(Indicator):
 
         for indicator in self.__indicator:
             df = indicator(stock)
+            self.column_names += indicator.column_names
             df.rename(columns={org: col for org, col in zip(
                 df.columns, indicator.column_names)}, inplace=True)
             if self.__fillna is not None:
