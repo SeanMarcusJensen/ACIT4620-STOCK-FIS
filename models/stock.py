@@ -1,15 +1,18 @@
-from utils import download_stock_data
 import pandas as pd
-
+from utils import download_stock_data
+from utils import DateChunker
 
 class Stock:
     def __init__(self, ticker, **kwargs):
         self.name = ticker
         self.__data = download_stock_data(ticker, **kwargs)
-        print(self.__data.iloc[-1])
+        self.__chunker = DateChunker(self.get_data())
 
-    def get_date(self, date: str) -> pd.DataFrame:
-        return self.__data.query(f'Datetime >= "{date}"')
+    def by_date(self) -> list:
+        return self.__chunker
+
+    def get_on_date(self, date: str) -> pd.DataFrame:
+        return self.__chunker.get_date(date)
 
     def get_data(self) -> pd.DataFrame:
         return self.__data
@@ -23,5 +26,10 @@ class Stock:
 
 
 if __name__ == "__main__":
-    STOCK = Stock("AMZN", interval='5m')
-    print(STOCK["Close"])
+    STOCK = Stock("AAPL", interval='5m')
+    print(STOCK.get_data().info())
+
+    for chunk in STOCK.by_date():
+        print(chunk.head())
+
+    print(STOCK.get_on_date('2024-11-01').head())

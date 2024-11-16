@@ -19,11 +19,11 @@ def save(data: pd.DataFrame, ticker_name: str, interval: str | None = None) -> p
 
     if os.path.exists(file_name):
         data.to_csv(os.path.join(
-            folder, f'{ticker_name}.csv'), mode='a', header=False)
+            folder, f'{ticker_name}.csv'), mode='a', header=False, index=False)
         data = pd.read_csv(file_name, index_col='Datetime')
     else:
         data.to_csv(os.path.join(
-            folder, f'{ticker_name}.csv'))
+            folder, f'{ticker_name}.csv'), index=False)
     return data
 
 
@@ -49,6 +49,8 @@ def download_stock_data(ticker_name: str, **kwargs) -> pd.DataFrame:
             end=end_time,
             period='1d',
             interval=INTERVAL)
+        data.reset_index(inplace=True)
+        data['Datetime'] = pd.to_datetime(data['Datetime'])
         data = save(data, ticker_name, INTERVAL)
         current_time = end_time
     return data
