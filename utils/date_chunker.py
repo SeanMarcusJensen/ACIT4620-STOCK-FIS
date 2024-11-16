@@ -1,8 +1,9 @@
 import pandas as pd
 from typing import Dict
 
+
 class DateChunker:
-    def __init__(self, data: pd.DataFrame,index: str = 'Datetime', column: str = 'Date') -> None:
+    def __init__(self, data: pd.DataFrame, index: str = 'Datetime', column: str = 'Date') -> None:
         self.chunked: Dict[str, pd.DataFrame] = {}
         self.columns = data.columns
 
@@ -16,9 +17,15 @@ class DateChunker:
     def get_date(self, date: str) -> pd.DataFrame:
         data = self.chunked.get(date, pd.DataFrame())
         return data
-    
+
+    def get_date_chunk(self, start: str, end: str) -> pd.DataFrame:
+        data = pd.concat([self.get_date(date)
+                         for date in self.chunked.keys() if start <= date <= end])
+        return data
+
     def __iter__(self):
         return iter(self.chunked.values())
+
 
 if __name__ == "__main__":
     from models import Stock
@@ -26,4 +33,3 @@ if __name__ == "__main__":
     chunker = DateChunker(STOCK.get_data())
     chunk = chunker.get_date('2024-11-01')
     print(chunk.head())
-
