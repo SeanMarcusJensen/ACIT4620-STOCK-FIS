@@ -1,15 +1,20 @@
-import pandas_ta as ta
+from pandas_ta import rsi
 from models import Stock
 from .abstraction import Indicator
 from pandas import DataFrame
 
+
 class RSI(Indicator):
     name = 'RSI'
-    def __init__(self, period: int = 14) -> None:
+    column_names = ['RSI']
+
+    def __init__(self, period: int = 14, magnitude: int = 100) -> None:
         super().__init__()
-        self.__period = period
-        print("hello world")
+        self.length = period
+        self.scalar = magnitude
 
     def __call__(self, stock: Stock) -> DataFrame:
+        import pandas as pd
         close = stock['Close']
-        return ta.rsi(close, offset=self.__period) # type: ignore 
+        data = rsi(close, **self.__dict__)  # type: ignore
+        return pd.DataFrame(data)

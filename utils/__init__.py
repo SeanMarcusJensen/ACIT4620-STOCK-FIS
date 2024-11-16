@@ -1,3 +1,2 @@
-__all__ = ['download_history'] 
-
-from .stock_downloader import download_history
+__all__ = ['download_stock_data']
+from .download_stock_data import download_stock_data
