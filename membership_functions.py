@@ -67,8 +67,10 @@ class MACD(Indicator):
         close = stock['Close']
         if close is None:
             return pd.DataFrame()
-        macd = ta.macd(close, fast=self.__fast, slow=self.__slow, signal=self.__signal)
-        return macd[['MACD_12_26_9', 'MACDs_12_26_9', 'MACDh_12_26_9']]  # MACD, Signal, Histogram
+        macd = ta.macd(close, fast=self.__fast,
+                       slow=self.__slow, signal=self.__signal)
+        # MACD, Signal, Histogram
+        return macd[['MACD_12_26_9', 'MACDs_12_26_9', 'MACDh_12_26_9']]
 
 
 class StochasticOscillator(Indicator):
@@ -89,7 +91,8 @@ class StochasticOscillator(Indicator):
         low = stock['Low']
         if close is None or high is None or low is None:
             return pd.DataFrame()
-        so = ta.stoch(high, low, close, k=self.__k, d=self.__d, smooth_k=self.__smooth_k)
+        so = ta.stoch(high, low, close, k=self.__k,
+                      d=self.__d, smooth_k=self.__smooth_k)
         return so[['STOCHk_14_3_3', 'STOCHd_14_3_3']]  # %K, %D
 
 
@@ -159,12 +162,14 @@ if __name__ == "__main__":
     # MACD Signals
     macd_indicator = MACD()
     macd_data = macd_indicator(AAPL).reindex(AAPL['Close'].index)
-    macd_signals = [generate_macd_signal(value) for value in macd_data['MACD_12_26_9']]
+    macd_signals = [generate_macd_signal(value)
+                    for value in macd_data['MACD_12_26_9']]
 
     # SO Signals
     so_indicator = StochasticOscillator()
     so_data = so_indicator(AAPL).reindex(AAPL['Close'].index)
-    so_signals = [generate_so_signal(value) for value in so_data['STOCHk_14_3_3']]
+    so_signals = [generate_so_signal(value)
+                  for value in so_data['STOCHk_14_3_3']]
 
     # OBV Signals
     obv_indicator = OBV()
@@ -188,13 +193,17 @@ if __name__ == "__main__":
     signal_events = []
     for _, row in signal_df.iterrows():
         if row['RSI_Signal']:
-            signal_events.append({'Time': row['Time'], 'Indicator': 'RSI', 'Signal': row['RSI_Signal']})
+            signal_events.append(
+                {'Time': row['Time'], 'Indicator': 'RSI', 'Signal': row['RSI_Signal']})
         if row['MACD_Signal']:
-            signal_events.append({'Time': row['Time'], 'Indicator': 'MACD', 'Signal': row['MACD_Signal']})
+            signal_events.append(
+                {'Time': row['Time'], 'Indicator': 'MACD', 'Signal': row['MACD_Signal']})
         if row['SO_Signal']:
-            signal_events.append({'Time': row['Time'], 'Indicator': 'SO', 'Signal': row['SO_Signal']})
+            signal_events.append(
+                {'Time': row['Time'], 'Indicator': 'SO', 'Signal': row['SO_Signal']})
         if row['OBV_Signal']:
-            signal_events.append({'Time': row['Time'], 'Indicator': 'OBV', 'Signal': row['OBV_Signal']})
+            signal_events.append(
+                {'Time': row['Time'], 'Indicator': 'OBV', 'Signal': row['OBV_Signal']})
 
     # Create signal events DataFrame
     signal_events_df = pd.DataFrame(signal_events)
@@ -228,8 +237,10 @@ if __name__ == "__main__":
     plt.subplot(4, 1, 3)
     plt.plot(so_data.index, so_data['STOCHk_14_3_3'], label='SO (%K)')
     plt.plot(so_data.index, so_data['STOCHd_14_3_3'], label='SO (%D)')
-    plt.axhline(y=20, color='green', linestyle='--', label='Oversold Threshold')
-    plt.axhline(y=80, color='red', linestyle='--', label='Overbought Threshold')
+    plt.axhline(y=20, color='green', linestyle='--',
+                label='Oversold Threshold')
+    plt.axhline(y=80, color='red', linestyle='--',
+                label='Overbought Threshold')
     plt.legend()
     plt.title("Stochastic Oscillator")
 
@@ -244,7 +255,8 @@ if __name__ == "__main__":
 
     # Plot stock price movement in a separate window
     plt.figure(figsize=(14, 7))
-    plt.plot(AAPL['Close'].index, AAPL['Close'], label='Stock Price', color='blue')
+    plt.plot(AAPL['Close'].index, AAPL['Close'],
+             label='Stock Price', color='blue')
     plt.xlabel("Time")
     plt.ylabel("Price")
     plt.title("Stock Price Movement")
