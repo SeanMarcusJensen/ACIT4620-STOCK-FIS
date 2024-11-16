@@ -2,21 +2,20 @@ import pandas as pd
 from typing import Dict
 
 class DateChunker:
-    def __init__(self, data: pd.DataFrame, column: str = 'Date') -> None:
+    def __init__(self, data: pd.DataFrame,index: str = 'Datetime', column: str = 'Date') -> None:
         self.chunked: Dict[str, pd.DataFrame] = {}
         self.columns = data.columns
 
         data = data.reset_index()
-        data['Date'] = pd.to_datetime(data['Datetime'], utc=True).dt.date
-        data.set_index('Datetime', inplace=True)
+        data[column] = pd.to_datetime(data[index], utc=True).dt.date
+        data.set_index(index, inplace=True)
         chunks = data.groupby(column)
         for key, value in chunks:
-            self.chunked[key.__str__()] = value
+            self.chunked[key.__str__()] = pd.DataFrame(value[self.columns])
 
     def get_date(self, date: str) -> pd.DataFrame:
         data = self.chunked.get(date, pd.DataFrame())
-        data = data[self.columns]
-        return pd.DataFrame(data)
+        return data
     
     def __iter__(self):
         return iter(self.chunked.values())
