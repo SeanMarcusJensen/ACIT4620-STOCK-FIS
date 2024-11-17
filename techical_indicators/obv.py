@@ -6,7 +6,7 @@ from pandas import DataFrame
 
 class OBV(Indicator):
     name = "OBV"
-    column_names = ["OBV"]
+    column_names = ["OBV", "OBV_Trend"]
 
     def __init__(self) -> None:
         super().__init__()
@@ -18,6 +18,21 @@ class OBV(Indicator):
 
         close = stock['Close']
         volume = stock['Volume']
-        data = obv(close, volume)  # type: ignore
+        obv_data = pd.DataFrame(obv(close, volume)) # type: ignore
 
-        return pd.DataFrame(data)
+        prev_obv = None
+        for i, row in obv_data.iterrows():
+            if prev_obv is None:
+                obv_data.loc[i, 'OBV_Trend'] = 0
+                prev_obv = row['OBV']
+                continue
+
+            if row['OBV'] > prev_obv:
+                obv_data.loc[i, 'OBV_Trend'] = 1
+            elif row['OBV'] < prev_obv:
+                obv_data.loc[i, 'OBV_Trend'] = -1
+            else:
+                obv_data.loc[i, 'OBV_Trend'] = 0
+            prev_obv = row['OBV']
+
+        return obv_data
