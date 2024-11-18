@@ -25,6 +25,9 @@ class DateChunker:
 
     def __iter__(self):
         return iter(self.chunked.values())
+    
+    def get_data(self) -> pd.DataFrame:
+        return pd.concat([chunk for chunk in self.chunked.values()])
 
 
 if __name__ == "__main__":
