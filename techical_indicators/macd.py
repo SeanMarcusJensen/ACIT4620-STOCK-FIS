@@ -20,5 +20,7 @@ class MACD(Indicator):
         """
         import pandas as pd
         close = stock['Close']
-        data = macd(close, **self.__dict__)
-        return pd.DataFrame(data)
+        data = pd.DataFrame(macd(close, **self.__dict__)) # type: ignore
+        data.rename(columns={org: col for org, col in zip(
+            data.columns, self.column_names)}, inplace=True)
+        return data

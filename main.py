@@ -52,6 +52,21 @@ def create_system():
     return simulator
 
 
+class StockIndicator:
+    def __init__(self, indicators: list) -> None:
+        self.indicators = indicators
+        self.columns = [indicator.name for indicator in indicators]
+    
+    def action(self, series) -> str:
+        assert len(series) >= len(self.columns)
+        assert series.columns == self.columns
+
+        for index, row in series.iterrows():
+            pass
+
+        return ''
+
+
 if __name__ == "__main__":
     STOCK = Stock('AAPL')
     indicators = [RSI(), MACD(), OBV(), StochasticOscillator()]
@@ -59,8 +74,6 @@ if __name__ == "__main__":
 
     data = indicator(STOCK)
     chunker = DateChunker(data)
-    print(chunker.get_date('2024-11-01').head())
-
     simulator = create_system()
 
     for chunk in iter(chunker):
@@ -69,12 +82,13 @@ if __name__ == "__main__":
             simulator.input['RSI'] = row['RSI']
             simulator.input['OBV'] = row['OBV']
             simulator.input['MACD'] = row['MACD']
-            simulator.input['SO'] = row['STOCH_k']
+            simulator.input['SO'] = row['SO']
             simulator.compute()
-            decisions.append(simulator.output.get('Action', None))
+            decisions.append(simulator.output.get('Action', np.nan))
 
         chunk['Decicion'] = decisions
-        chunk['Action'] = chunk['Decicion'].apply(lambda x: 'Hold' if x is None else 'Buy' if x > 50 else 'Sell' if x < 50 else 'Hold')
+        chunk['Action'] = chunk['Decicion'].apply(lambda x: 'Buy' if x > 50 else 'Sell' if x < 50 else 'Hold')
+
     
     data = chunker.get_data()
 

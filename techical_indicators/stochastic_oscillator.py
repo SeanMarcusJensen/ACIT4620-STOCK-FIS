@@ -5,8 +5,8 @@ from pandas import DataFrame
 
 
 class StochasticOscillator(Indicator):
-    name = "Stochastic Oscillator"
-    column_names = ['STOCH_k', 'STOCH_d', 'STOCH_s']
+    name = "SO"
+    column_names = [name, 'STOCH_d', 'STOCH_s']
 
     def __init__(self, fast_k: int = 14, slow_d: int = 3, slow_k: int = 3) -> None:
         super().__init__()
