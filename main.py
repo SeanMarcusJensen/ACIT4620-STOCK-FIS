@@ -33,18 +33,15 @@ def create_system():
     action['Buy'] = fuzz.trapmf(action.universe, [50, 70, 100, 100])
 
     rules = [
-            ctrl.Rule(macd['Low']   & rsi['Low']    & so['Low']     & obv['Low'],   action['Buy']),
-            ctrl.Rule(macd['Low']   & rsi['Low']    & so['Low']     & obv['High'],  action['Hold']),
-            ctrl.Rule(macd['High']  & rsi['Low']    & so['Low']     & obv['Low'],   action['Sell']),
-            ctrl.Rule(macd['High']  & rsi['Low']    & so['Low']     & obv['High'],  action['Buy']),
-            ctrl.Rule(macd['Low']   & rsi['Low']    & so['Medium']  & obv['Low'],   action['Hold']),
-            ctrl.Rule(macd['Low']   & rsi['Low']    & so['Medium']  & obv['High'],  action['Hold']),
-            ctrl.Rule(macd['High']  & rsi['Low']    & so['Medium']  & obv['High'],  action['Sell']),
-            ctrl.Rule(macd['Low']   & rsi['Medium'] & so['Medium']  & obv['Low'],   action['Sell']),
-            ctrl.Rule(macd['Low']   & rsi['Medium'] & so['Low']     & obv['High'],  action['Buy']),
-            ctrl.Rule(macd['High']  & rsi['Medium'] & so['High']    & obv['Low'],   action['Buy']),
-            ctrl.Rule(macd['High']  & rsi['Medium'] & so['Low']     & obv['High'],  action['Buy']),
-            ctrl.Rule(macd['Low']   & rsi['Low']    & so['High']    & obv['High'],  action['Sell']),
+            ctrl.Rule(macd['High']   & rsi['Low']    & so['Low']     & obv['High'],   action['Buy']),
+            ctrl.Rule(macd['Low']   & rsi['High']    & so['High']     & obv['Low'],  action['Buy']),
+            ctrl.Rule(macd['High']  & rsi['Medium']    & so['Medium']     & obv['High'],   action['Buy']),
+            ctrl.Rule(rsi['Low']    & so['Low']     & obv['High'],  action['Buy']),
+            ctrl.Rule(macd['Low']   & rsi['Medium']    & so['High']  & obv['Low'],   action['Sell']),
+            ctrl.Rule(rsi['High']    & so['High']  & obv['Low'],  action['Sell']),
+            ctrl.Rule(macd['Low']  & rsi['High']    & so['High'],  action['Sell']),
+            ctrl.Rule(macd['Low']   & rsi['Medium'] & so['Medium'],   action['Hold']),
+            ctrl.Rule(macd['High']   & rsi['Medium'] & so['Medium']     & obv['Low'],  action['Hold']),
     ]
 
     system = ctrl.ControlSystem(rules)
