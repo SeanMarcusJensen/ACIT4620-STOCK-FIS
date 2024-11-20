@@ -1,5 +1,6 @@
 from models import Stock
 from abc import ABC, abstractmethod
+from typing import Tuple
 from pandas import DataFrame
 
 import skfuzzy.control as ctrl
@@ -9,9 +10,5 @@ class Indicator(ABC):
     column_names: list[str]
 
     @abstractmethod
-    def __call__(self, stock: Stock) -> DataFrame:
+    def __call__(self, stock: Stock) -> Tuple[ctrl.Antecedent, DataFrame]:
         raise NotImplementedError
-
-    @abstractmethod
-    def get_mf(self) -> ctrl.Antecedent:
-        raise NotImplementedError()
