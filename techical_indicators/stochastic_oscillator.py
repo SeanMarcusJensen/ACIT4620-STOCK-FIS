@@ -3,10 +3,13 @@ from models import Stock
 from .abstraction import Indicator
 from pandas import DataFrame
 
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
 
 class StochasticOscillator(Indicator):
-    name = "Stochastic Oscillator"
-    column_names = ['STOCH_k', 'STOCH_d', 'STOCH_s']
+    name = "so"
+    column_names = [name, 'STOCH_d', 'STOCH_s']
 
     def __init__(self, fast_k: int = 14, slow_d: int = 3, slow_k: int = 3) -> None:
         super().__init__()
@@ -23,5 +26,14 @@ class StochasticOscillator(Indicator):
         close = stock['Close']
         high = stock['High']
         low = stock['Low']
-        data = stoch(high, low, close, **self.__dict__)  # type: ignore
-        return pd.DataFrame(data)
+        data = pd.DataFrame(stoch(high, low, close, **self.__dict__)) # type: ignore
+        data.rename(columns={org: col for org, col in zip(
+            data.columns, self.column_names)}, inplace=True)
+        return data
+
+    def get_mf(self) -> ctrl.Antecedent:
+        so = ctrl.Antecedent(np.arange(0, 101, 1), self.name)
+        so['Low'] = fuzz.trimf(so.universe, [0, 0, 20])
+        so['Medium'] = fuzz.trimf(so.universe, [20, 50, 80])
+        so['High'] = fuzz.trimf(so.universe, [80, 100, 100])
+        return so
