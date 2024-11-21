@@ -1,11 +1,13 @@
 from pandas_ta import stoch
 from models import Stock
 from .abstraction import Indicator
-from pandas import DataFrame
+from typing import Tuple
+import pandas as pd
 
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
+
 
 class StochasticOscillator(Indicator):
     name = "so"
@@ -17,8 +19,7 @@ class StochasticOscillator(Indicator):
         self.d = slow_d
         self.smooth_k = slow_k
 
-    def __call__(self, stock: Stock) -> DataFrame:
-        import pandas as pd
+    def __call__(self, stock: Stock, fillna: float | None = None) -> Tuple[ctrl.Antecedent, pd.DataFrame]:
         assert stock['Close'] is not None, 'Close column is missing'
         assert stock['High'] is not None, 'Close column is missing'
         assert stock['Low'] is not None, 'Close column is missing'
@@ -26,14 +27,23 @@ class StochasticOscillator(Indicator):
         close = stock['Close']
         high = stock['High']
         low = stock['Low']
-        data = pd.DataFrame(stoch(high, low, close, **self.__dict__)) # type: ignore
+        data = stoch(high, low, close, **self.__dict__)  # type: ignore
         data.rename(columns={org: col for org, col in zip(
             data.columns, self.column_names)}, inplace=True)
-        return data
+        if fillna is not None:
+            data.fillna(fillna, inplace=True)
+        else:
+            data.dropna(inplace=True)
+        return (self.get_mf(data), pd.DataFrame(data[self.name]))
 
-    def get_mf(self) -> ctrl.Antecedent:
+    def get_mf(self, data: pd.DataFrame) -> ctrl.Antecedent:
+        so_data = data[self.name]
+        low = so_data[so_data < 20]
+        mid = so_data[(so_data > 20) & (so_data < 80)]
+        high = so_data[so_data > 80]
+
         so = ctrl.Antecedent(np.arange(0, 101, 1), self.name)
-        so['Low'] = fuzz.trimf(so.universe, [0, 0, 20])
-        so['Medium'] = fuzz.trimf(so.universe, [20, 50, 80])
-        so['High'] = fuzz.trimf(so.universe, [80, 100, 100])
+        so['Low'] = fuzz.gaussmf(so.universe, low.mean(), low.std())
+        so['Medium'] = fuzz.gaussmf(so.universe, mid.mean(), mid.std())
+        so['High'] = fuzz.gaussmf(so.universe, high.mean(), high.std())
         return so
