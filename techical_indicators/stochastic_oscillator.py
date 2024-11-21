@@ -18,7 +18,7 @@ class StochasticOscillator(Indicator):
         self.d = slow_d
         self.smooth_k = slow_k
 
-    def __call__(self, stock: Stock) -> Tuple[ctrl.Antecedent, pd.DataFrame]:
+    def __call__(self, stock: Stock, fillna: float | None = None) -> Tuple[ctrl.Antecedent, pd.DataFrame]:
         assert stock['Close'] is not None, 'Close column is missing'
         assert stock['High'] is not None, 'Close column is missing'
         assert stock['Low'] is not None, 'Close column is missing'
@@ -29,7 +29,11 @@ class StochasticOscillator(Indicator):
         data = pd.DataFrame(stoch(high, low, close, **self.__dict__)) # type: ignore
         data.rename(columns={org: col for org, col in zip(
             data.columns, self.column_names)}, inplace=True)
-        return (self.get_mf(data), data)
+        if fillna is not None:
+            data.fillna(fillna, inplace=True)
+        else:
+            data.dropna(inplace=True)
+        return (self.get_mf(data), pd.DataFrame(data[self.name]))
 
     def get_mf(self, data: pd.DataFrame) -> ctrl.Antecedent:
         so_data = data[self.name]
@@ -41,9 +45,4 @@ class StochasticOscillator(Indicator):
         so['Low'] = fuzz.gaussmf(so.universe, low.mean(), low.std())
         so['Medium'] = fuzz.gaussmf(so.universe, mid.mean(), mid.std())
         so['High'] = fuzz.gaussmf(so.universe, high.mean(), high.std())
-
-        import matplotlib.pyplot as plt
-        so.view()
-        plt.show()
-
         return so

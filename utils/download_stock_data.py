@@ -49,6 +49,7 @@ def download_stock_data(ticker_name: str, **kwargs) -> pd.DataFrame:
             end=end_time,
             period='1d',
             interval=INTERVAL)
+        data.index.names = ['Datetime']
         data.reset_index(inplace=True)
         data['Datetime'] = pd.to_datetime(data['Datetime'])
         data = save(data, ticker_name, INTERVAL)

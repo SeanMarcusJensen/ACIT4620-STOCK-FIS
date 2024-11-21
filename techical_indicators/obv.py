@@ -17,15 +17,21 @@ class OBV(Indicator):
     def __init__(self) -> None:
         super().__init__()
 
-    def __call__(self, stock: Stock) -> Tuple[ctrl.Antecedent, DataFrame]:
+    def __call__(self, stock: Stock, fillna: float | None = None) -> Tuple[ctrl.Antecedent, DataFrame]:
         assert stock['Close'] is not None, 'Close column is missing'
         assert stock['Volume'] is not None, 'Volume column is missing'
 
         close = stock['Close']
         volume = stock['Volume']
         obv_data = pd.DataFrame(obv(close, volume)) # type: ignore
+
         obv_data.rename(columns={org: col for org, col in zip(
             obv_data.columns, self.column_names)}, inplace=True)
+
+        if fillna is not None:
+            obv_data.fillna(fillna, inplace=True)
+        else:
+            obv_data.dropna(inplace=True)
 
         prev_obv = None
         for i, row in obv_data.iterrows():
@@ -40,9 +46,10 @@ class OBV(Indicator):
                 obv_data.loc[i, 'OBV_Trend'] = -1
             else:
                 obv_data.loc[i, 'OBV_Trend'] = prev_obv
+
             prev_obv = row[self.name]
 
-        return (self.get_mf(obv_data), obv_data)
+        return (self.get_mf(obv_data), pd.DataFrame(obv_data[self.name]))
 
     def get_mf(self, data: pd.DataFrame) -> ctrl.Antecedent:
         obv_data = data[self.name]
@@ -52,9 +59,5 @@ class OBV(Indicator):
         obv = ctrl.Antecedent(np.linspace(data[self.name].min(), data[self.name].max(), num=len(obv_data)), self.name)
         obv['Low'] = fuzz.gaussmf(obv.universe, low.mean(), low.std())
         obv['High'] = fuzz.gaussmf(obv.universe, high.mean(), high.std())
-
-        import matplotlib.pyplot as plt
-        obv.view()
-        plt.show()
 
         return obv

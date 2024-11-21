@@ -10,5 +10,5 @@ class Indicator(ABC):
     column_names: list[str]
 
     @abstractmethod
-    def __call__(self, stock: Stock) -> Tuple[ctrl.Antecedent, DataFrame]:
+    def __call__(self, stock: Stock, fillna: float | None = None) -> Tuple[ctrl.Antecedent, DataFrame]:
         raise NotImplementedError
