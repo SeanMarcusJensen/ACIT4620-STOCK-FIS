@@ -10,7 +10,7 @@ import pandas as pd
 import skfuzzy.control as ctrl
 import matplotlib.pyplot as plt
 from techical_indicators import RSI, MACD, OBV, StochasticOscillator
-
+from dataclasses import dataclass
 
 class Signal(enum.Enum):
     STRONGSELL = 'strong_sell'
@@ -20,70 +20,115 @@ class Signal(enum.Enum):
     STRONGBUY = 'strong_buy'
 
 
+@dataclass
+class Transaction:
+    time: pd.Timestamp
+    shares: int
+    at_price: float
+    action: Signal
+
+    @staticmethod
+    def create_sell(time, shares, price) -> tuple:
+        transaction = Transaction(time, -shares, price, Signal.SELL)
+        return (transaction, -1 * transaction.cost())
+
+    @staticmethod
+    def create_buy(time, shares, price) -> tuple:
+        transaction = Transaction(time, shares, price, Signal.BUY)
+        return (transaction, transaction.cost())
+
+    def cost(self):
+        return self.shares * self.at_price
+
+
 class Wallet:
-    def __init__(self, value):
-        self.starting_value = value
-        self.value = value
-        self.last_action: Signal | None = None
-        self.n_shares = 0
-        self.buy_price = 0.0
-        self.history = []
+    def __init__(self, capital, ticker: str):
+        self.ticker = ticker
+        self.deposit = capital
+        self.capital = capital 
         self.comission = 0.0
-        self.successful_trades = 0
-        self.trades = 0
         self.biggest_gain = 0.0
+        self.transactions: List[Transaction] = []
+        self.n_shares = 0
 
     def act(self, signal: Signal, price, index) -> float:
         match signal:
             case Signal.STRONGBUY:
-                self.buy(price, index)
+                return self.buy(price, index)
             case Signal.BUY:
-                self.buy(price, index, 1.)
+                return self.buy(price, index, .2)
             case Signal.SELL:
-                self.sell(price, index, 1.)
+                return self.sell(price, index, .2)
             case Signal.STRONGSELL:
-                self.sell(price, index)
+                return self.sell(price, index)
+        return 0.0
 
-        return self.profits()
 
-    def buy(self, price, index, pct = 1.0):
-        buy_n_shares = (self.value * pct) // price
+    def buy(self, price, index, pct = 1.0) -> float:
+        buy_n_shares = (self.capital * pct) // price
         if buy_n_shares < 1:
-            return
+            return 0.0
 
-        self.n_shares = buy_n_shares
-        self.trades += 1
-        self.buy_price = price
-        self.value -= (price * buy_n_shares)
-        self.value -= self.comission
-        self.last_action = Signal.BUY
-        self.history.append((index, price, Signal.BUY))
+        transaction, cost = Transaction.create_buy(index, buy_n_shares, price)
+        self.transactions.append(transaction)
 
-    def sell(self, price, index, pct = 1.0):
+        change = (-1 * cost) / self.capital
+        self.capital -= cost
+        self.capital -= self.comission
+        self.n_shares += buy_n_shares
+        return change
+
+    def sell(self, price, index, pct = 1.0) -> float:
         import math
         sell_n_shares = math.floor(self.n_shares * pct)
-
         if sell_n_shares < 1:
-            return
+            return 0.0
 
-        self.trades += 1
-        gain = (price * sell_n_shares)
+        transaction, gain = Transaction.create_sell(index, sell_n_shares, price)
+        self.transactions.append(transaction)
+
+        change = (-1 * gain) / self.capital
         self.biggest_gain = max(self.biggest_gain, gain)
-        self.value += gain
-        self.value -= self.comission
+        self.capital += gain
+        self.capital -= self.comission
         self.n_shares -= sell_n_shares
-        self.last_action = Signal.SELL
-        self.history.append((index, price, Signal.SELL))
+        return change
 
-        if price > self.buy_price:
-            self.successful_trades += 1
+    def current_value(self, price):
+        total_shares = sum([t.shares for t in self.transactions])
+        return (total_shares * price) + self.capital
+    
+    def accumulate_cost(self):
+        return sum([t.cost() for t in self.transactions])
 
-    def profits(self):
-        return (self.value + (self.n_shares * self.buy_price)) - self.starting_value
+    def profits(self, price=None):
+        if price is None:
+            if len(self.transactions) == 0:
+                return 0
+            price = self.transactions[-1].at_price
+        return self.current_value(price) - self.deposit
+    
+    def get_transactions(self):
+        return self.transactions
+    
+    def get_info(self, current_market_value: float) -> dict:
+        return {
+                'ticker': self.ticker,
+                'capital': self.capital,
+                'deposit': self.deposit,
+                'current_market_value': self.current_value(current_market_value),
+                'profits': self.profits(current_market_value),
+                'number_of_shares': self.n_shares,
+                'number_of_trades': len(self.transactions),
+                'yield_pct': self.profits(current_market_value) / self.deposit,
+                }
 
     def __str__(self):
-        trades = (self.successful_trades / self.trades) * 100 if (self.trades > 0 and self.successful_trades > 0) else 0
-        return f"Wallet: [{self.value}, @profit={self.profits()}], Trades: [{self.successful_trades}/{self.trades}({trades}%)], Shares: [n:{self.n_shares}, @{self.buy_price}], Last Action: {self.last_action}, Biggest Winner: {self.biggest_gain}"
+        sell_trades = sum([1 for t in self.transactions if t.action == Signal.SELL])
+        buy_trades = sum([1 for t in self.transactions if t.action == Signal.BUY])
+        n_trades = sell_trades + buy_trades
+        return f"Wallet: [capital: {self.capital}, starting capital: {self.deposit}], Trades: [{n_trades} @ s:{sell_trades}, b:{buy_trades}]" \
+                f"Shares: [{self.n_shares}], Biggest Winner: [{self.biggest_gain}]"
 
 
 class Predictor:
@@ -121,6 +166,7 @@ class Predictor:
         ]
 
         system = ctrl.ControlSystem(rules)
+
         return ctrl.ControlSystemSimulation(system)
 
     def __get_output_signal(self, value: float) -> Signal:
@@ -144,9 +190,10 @@ class System:
         import time
         start = time.time()
 
-        wallet = Wallet(10000)
+        wallet = Wallet(10000, stock.name)
         mfs, indicators = zip(*[i(stock, self.fillna) for i in self.indicators])
         data = pd.concat([stock.get_data(), *[i for i in indicators]], axis=1)
+
         if self.fillna is not None:
             data.fillna(self.fillna, inplace=True)
         else:
@@ -162,14 +209,13 @@ class System:
         for index, row in data.iterrows():
             action = predictor.get_signal(row, plot_signal=print_mf)
             data.loc[index, 'action'] = action.value
-
-            returns = wallet.act(action, row['Close'], index)
-            data.loc[index, 'returns'] = returns
+            wallet_change_pct = wallet.act(action, row['Close'], index)
+            data.loc[index, 'change_pct'] = wallet_change_pct
 
         end = time.time()
         delta = end - start
         print(f"System took {delta} seconds to complete")
-        print(wallet)
+        print(wallet.get_info(data['Close'].iloc[-1]))
         print(data.head())
 
         return data
@@ -182,7 +228,7 @@ if __name__ == "__main__":
             'AAPL': ['5m', '15m', '1d'],
             'AMZN': ['5m', '15m', '1d'],
             'PLTR': ['5m', '15m', '1d'],
-            'VVV': ['5m', '15m', '1d'],
+            # 'VVV': ['5m', '15m', '1d'],
             }
 
     indicators = [
@@ -200,22 +246,6 @@ if __name__ == "__main__":
                 os.makedirs(directory, exist_ok=True)
 
             STOCK = Stock(stock, interval=interval)
-            data = system(STOCK, print_mf=True)
+            data = system(STOCK, print_mf=False)
             save_path = os.path.join(directory, f'{stock}.csv')
             data.to_csv(save_path)
-
-    # fig = plt.subplot()
-    # fig.plot(data['Close'])
-
-    # buys = data[data['Action'] == 'buy']
-    # sells = data[data['Action'] == 'sell']
-
-    # print(f"Number of buys: {len(buys)}")
-    # print(f"Number of sells: {len(sells)}")
-
-    # fig.plot(buys['Close'], markersize=5, color='green', marker='o')
-    # fig.plot(sells['Close'], markersize=5, color='red', marker='x')
-    # fig.set_xticklabels([])
-    # plt.show()
-    # plt.savefig(f'{STOCK.name}-scuffed.png')
-

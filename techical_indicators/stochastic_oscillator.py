@@ -8,6 +8,7 @@ import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 
+
 class StochasticOscillator(Indicator):
     name = "so"
     column_names = [name, 'STOCH_d', 'STOCH_s']
@@ -26,7 +27,7 @@ class StochasticOscillator(Indicator):
         close = stock['Close']
         high = stock['High']
         low = stock['Low']
-        data = pd.DataFrame(stoch(high, low, close, **self.__dict__)) # type: ignore
+        data = stoch(high, low, close, **self.__dict__)  # type: ignore
         data.rename(columns={org: col for org, col in zip(
             data.columns, self.column_names)}, inplace=True)
         if fillna is not None:
