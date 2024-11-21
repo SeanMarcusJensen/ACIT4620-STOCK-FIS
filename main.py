@@ -51,7 +51,7 @@ class Wallet:
         self.transactions: List[Transaction] = []
         self.n_shares = 0
 
-    def act(self, signal: Signal, price, index) -> float:
+    def act(self, signal: Signal, price, index) -> tuple:
         match signal:
             case Signal.STRONGBUY:
                 return self.buy(price, index)
@@ -61,13 +61,13 @@ class Wallet:
                 return self.sell(price, index, .2)
             case Signal.STRONGSELL:
                 return self.sell(price, index)
-        return 0.0
+        return 0.0, 0
 
 
-    def buy(self, price, index, pct = 1.0) -> float:
+    def buy(self, price, index, pct = 1.0) -> tuple:
         buy_n_shares = (self.capital * pct) // price
         if buy_n_shares < 1:
-            return 0.0
+            return 0.0, 0
 
         transaction, cost = Transaction.create_buy(index, buy_n_shares, price)
         self.transactions.append(transaction)
@@ -76,13 +76,13 @@ class Wallet:
         self.capital -= cost
         self.capital -= self.comission
         self.n_shares += buy_n_shares
-        return change
+        return change, buy_n_shares
 
-    def sell(self, price, index, pct = 1.0) -> float:
+    def sell(self, price, index, pct = 1.0) -> tuple:
         import math
         sell_n_shares = math.floor(self.n_shares * pct)
         if sell_n_shares < 1:
-            return 0.0
+            return 0.0, 0
 
         transaction, gain = Transaction.create_sell(index, sell_n_shares, price)
         self.transactions.append(transaction)
@@ -92,7 +92,7 @@ class Wallet:
         self.capital += gain
         self.capital -= self.comission
         self.n_shares -= sell_n_shares
-        return change
+        return change, (-1 * sell_n_shares)
 
     def current_value(self, price):
         total_shares = sum([t.shares for t in self.transactions])
@@ -209,8 +209,13 @@ class System:
         for index, row in data.iterrows():
             action = predictor.get_signal(row, plot_signal=print_mf)
             data.loc[index, 'action'] = action.value
-            wallet_change_pct = wallet.act(action, row['Close'], index)
+            wallet_change_pct, shares = wallet.act(action, row['Close'], index)
             data.loc[index, 'change_pct'] = wallet_change_pct
+            data.loc[index, 'change_shares'] = shares
+            data.loc[index, 'profits'] = wallet.profits(row['Close'])
+            data.loc[index, 'shares'] = wallet.n_shares
+
+
 
         end = time.time()
         delta = end - start
@@ -225,11 +230,18 @@ if __name__ == "__main__":
     import os
     OUTPUT_FOLDER = 'output'
     STOCKS = {
-            'AAPL': ['5m', '15m', '1d'],
-            'AMZN': ['5m', '15m', '1d'],
-            'PLTR': ['5m', '15m', '1d'],
-            # 'VVV': ['5m', '15m', '1d'],
+            'AAPL': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
+            'AMZN': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
+            'PLTR': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
+            'VVV': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
             }
+
+    # STOCKS = {
+    #         'AAPL': [('1y', '1d')],
+    #         'AMZN': [('1y', '1d')],
+    #         'PLTR': [('1y', '1d')],
+    #         'VVV': [('1y',' 1d')],
+    #         }
 
     indicators = [
             RSI(period=14, magnitude=100),
@@ -240,12 +252,12 @@ if __name__ == "__main__":
 
     system = System(indicators, fillna=None)
     for stock, intervals in STOCKS.items():
-        for interval in intervals:
+        for period, interval in intervals:
             directory = os.path.join(OUTPUT_FOLDER, interval)
             if not os.path.exists(directory):
                 os.makedirs(directory, exist_ok=True)
 
-            STOCK = Stock(stock, interval=interval)
+            STOCK = Stock(stock, interval=interval, period=period)
             data = system(STOCK, print_mf=False)
             save_path = os.path.join(directory, f'{stock}.csv')
             data.to_csv(save_path)

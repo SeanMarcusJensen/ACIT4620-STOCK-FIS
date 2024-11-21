@@ -8,11 +8,8 @@ class Stock:
         self.name = ticker
         self.__data = download_stock_data(ticker, **kwargs)
         self.__data = self.__data.drop(columns=['Dividends', 'Stock Splits'])
-        self.__chunker = DateChunker(
-            self.get_data(), index='Datetime', column='Date')
-
-    def get_on_date(self, date: str) -> pd.DataFrame:
-        return self.__chunker.get_date(date)
+        # self.__chunker = DateChunker(
+        #     self.get_data(), index='Datetime', column='Date')
 
     def get_data(self) -> pd.DataFrame:
         return self.__data
