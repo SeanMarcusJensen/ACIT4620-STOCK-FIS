@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from techical_indicators import RSI, MACD, OBV, StochasticOscillator
 from dataclasses import dataclass
 
+
 class Signal(enum.Enum):
     STRONGSELL = 'strong_sell'
     SELL = 'sell'
@@ -45,7 +46,7 @@ class Wallet:
     def __init__(self, capital, ticker: str):
         self.ticker = ticker
         self.deposit = capital
-        self.capital = capital 
+        self.capital = capital
         self.comission = 0.0
         self.biggest_gain = 0.0
         self.transactions: List[Transaction] = []
@@ -63,8 +64,7 @@ class Wallet:
                 return self.sell(price, index)
         return 0.0, 0
 
-
-    def buy(self, price, index, pct = 1.0) -> tuple:
+    def buy(self, price, index, pct=1.0) -> tuple:
         buy_n_shares = (self.capital * pct) // price
         if buy_n_shares < 1:
             return 0.0, 0
@@ -78,16 +78,17 @@ class Wallet:
         self.n_shares += buy_n_shares
         return change, buy_n_shares
 
-    def sell(self, price, index, pct = 1.0) -> tuple:
+    def sell(self, price, index, pct=1.0) -> tuple:
         import math
         sell_n_shares = math.floor(self.n_shares * pct)
         if sell_n_shares < 1:
             return 0.0, 0
 
-        transaction, gain = Transaction.create_sell(index, sell_n_shares, price)
+        transaction, gain = Transaction.create_sell(
+            index, sell_n_shares, price)
         self.transactions.append(transaction)
 
-        change = (-1 * gain) / self.capital
+        change = gain / self.capital
         self.biggest_gain = max(self.biggest_gain, gain)
         self.capital += gain
         self.capital -= self.comission
@@ -97,7 +98,7 @@ class Wallet:
     def current_value(self, price):
         total_shares = sum([t.shares for t in self.transactions])
         return (total_shares * price) + self.capital
-    
+
     def accumulate_cost(self):
         return sum([t.cost() for t in self.transactions])
 
@@ -107,28 +108,30 @@ class Wallet:
                 return 0
             price = self.transactions[-1].at_price
         return self.current_value(price) - self.deposit
-    
+
     def get_transactions(self):
         return self.transactions
-    
+
     def get_info(self, current_market_value: float) -> dict:
         return {
-                'ticker': self.ticker,
-                'capital': self.capital,
-                'deposit': self.deposit,
-                'current_market_value': self.current_value(current_market_value),
-                'profits': self.profits(current_market_value),
-                'number_of_shares': self.n_shares,
-                'number_of_trades': len(self.transactions),
-                'yield_pct': self.profits(current_market_value) / self.deposit,
-                }
+            'ticker': self.ticker,
+            'capital': self.capital,
+            'deposit': self.deposit,
+            'current_market_value': self.current_value(current_market_value),
+            'profits': self.profits(current_market_value),
+            'number_of_shares': self.n_shares,
+            'number_of_trades': len(self.transactions),
+            'yield_pct': self.profits(current_market_value) / self.deposit,
+        }
 
     def __str__(self):
-        sell_trades = sum([1 for t in self.transactions if t.action == Signal.SELL])
-        buy_trades = sum([1 for t in self.transactions if t.action == Signal.BUY])
+        sell_trades = sum(
+            [1 for t in self.transactions if t.action == Signal.SELL])
+        buy_trades = sum(
+            [1 for t in self.transactions if t.action == Signal.BUY])
         n_trades = sell_trades + buy_trades
         return f"Wallet: [capital: {self.capital}, starting capital: {self.deposit}], Trades: [{n_trades} @ s:{sell_trades}, b:{buy_trades}]" \
-                f"Shares: [{self.n_shares}], Biggest Winner: [{self.biggest_gain}]"
+            f"Shares: [{self.n_shares}], Biggest Winner: [{self.biggest_gain}]"
 
 
 class Predictor:
@@ -142,7 +145,8 @@ class Predictor:
         self.simulator: ctrl.ControlSystemSimulation = self.__construct_system()
 
     def get_signal(self, series: pd.Series, plot_signal: bool = False) -> Signal:
-        self.simulator.inputs({name: series[name] for name in self.sets.keys()})
+        self.simulator.inputs({name: series[name]
+                              for name in self.sets.keys()})
         self.simulator.compute()
         output = self.simulator.output.get('action', np.nan)
         if plot_signal:
@@ -154,15 +158,24 @@ class Predictor:
     def __construct_system(self):
 
         rules = [
-                ctrl.Rule(self['macd']['High']   & self['rsi']['Low']    & self['so']['Low']     & self['obv']['High'],   self.action['Buy']),
-                ctrl.Rule(self['macd']['Low']   & self['rsi']['High']    & self['so']['High']     & self['obv']['Low'],  self.action['Buy']),
-                ctrl.Rule(self['macd']['High']  & self['rsi']['Medium']    & self['so']['Medium']     & self['obv']['High'],   self.action['Buy']),
-                ctrl.Rule(self['rsi']['Low']    & self['so']['Low']     & self['obv']['High'],  self.action['Buy']),
-                ctrl.Rule(self['macd']['Low']   & self['rsi']['Medium']    & self['so']['High']  & self['obv']['Low'],   self.action['Sell']),
-                ctrl.Rule(self['rsi']['High']    & self['so']['High']  & self['obv']['Low'],  self.action['Sell']),
-                ctrl.Rule(self['macd']['Low']  & self['rsi']['High']    & self['so']['High'],  self.action['Sell']),
-                ctrl.Rule(self['macd']['Low']   & self['rsi']['Medium'] & self['so']['Medium'],   self.action['Hold']),
-                ctrl.Rule(self['macd']['High']   & self['rsi']['Medium'] & self['so']['Medium']     & self['obv']['Low'],  self.action['Hold']),
+            ctrl.Rule(self['macd']['High'] & self['rsi']['Low'] & self['so']
+                      ['Low'] & self['obv']['High'],   self.action['Buy']),
+            ctrl.Rule(self['macd']['Low'] & self['rsi']['High'] & self['so']
+                      ['High'] & self['obv']['Low'],  self.action['Buy']),
+            ctrl.Rule(self['macd']['High'] & self['rsi']['Medium'] & self['so']
+                      ['Medium'] & self['obv']['High'],   self.action['Buy']),
+            ctrl.Rule(self['rsi']['Low'] & self['so']['Low'] &
+                      self['obv']['High'],  self.action['Buy']),
+            ctrl.Rule(self['macd']['Low'] & self['rsi']['Medium'] & self['so']
+                      ['High'] & self['obv']['Low'],   self.action['Sell']),
+            ctrl.Rule(self['rsi']['High'] & self['so']['High'] &
+                      self['obv']['Low'],  self.action['Sell']),
+            ctrl.Rule(self['macd']['Low'] & self['rsi']['High']
+                      & self['so']['High'],  self.action['Sell']),
+            ctrl.Rule(self['macd']['Low'] & self['rsi']['Medium']
+                      & self['so']['Medium'],   self.action['Hold']),
+            ctrl.Rule(self['macd']['High'] & self['rsi']['Medium'] & self['so']
+                      ['Medium'] & self['obv']['Low'],  self.action['Hold']),
         ]
 
         system = ctrl.ControlSystem(rules)
@@ -191,7 +204,8 @@ class System:
         start = time.time()
 
         wallet = Wallet(10000, stock.name)
-        mfs, indicators = zip(*[i(stock, self.fillna) for i in self.indicators])
+        mfs, indicators = zip(*[i(stock, self.fillna)
+                              for i in self.indicators])
         data = pd.concat([stock.get_data(), *[i for i in indicators]], axis=1)
 
         if self.fillna is not None:
@@ -209,13 +223,13 @@ class System:
         for index, row in data.iterrows():
             action = predictor.get_signal(row, plot_signal=print_mf)
             data.loc[index, 'action'] = action.value
+
             wallet_change_pct, shares = wallet.act(action, row['Close'], index)
             data.loc[index, 'change_pct'] = wallet_change_pct
             data.loc[index, 'change_shares'] = shares
             data.loc[index, 'profits'] = wallet.profits(row['Close'])
             data.loc[index, 'shares'] = wallet.n_shares
-
-
+            data.loc[index, 'curr_capital'] = wallet.capital
 
         end = time.time()
         delta = end - start
@@ -230,11 +244,11 @@ if __name__ == "__main__":
     import os
     OUTPUT_FOLDER = 'output'
     STOCKS = {
-            'AAPL': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
-            'AMZN': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
-            'PLTR': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
-            'VVV': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
-            }
+        'AAPL': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
+        'AMZN': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
+        'PLTR': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
+        'VVV': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
+    }
 
     # STOCKS = {
     #         'AAPL': [('1y', '1d')],
@@ -244,11 +258,11 @@ if __name__ == "__main__":
     #         }
 
     indicators = [
-            RSI(period=14, magnitude=100),
-            MACD(fast=12, slow=26, signal=9),
-            OBV(),
-            StochasticOscillator(fast_k=14, slow_d=3, slow_k=3)
-            ]
+        RSI(period=14, magnitude=100),
+        MACD(fast=12, slow=26, signal=9),
+        OBV(),
+        StochasticOscillator(fast_k=14, slow_d=3, slow_k=3)
+    ]
 
     system = System(indicators, fillna=None)
     for stock, intervals in STOCKS.items():
