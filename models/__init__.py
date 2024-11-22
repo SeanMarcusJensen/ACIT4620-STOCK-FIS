@@ -1,4 +1,3 @@
-__all__ = ['Stock', 'StockParams']
+__all__ = ['Stock']
 
 from .stock import Stock
-from .stock_params import StockParams
