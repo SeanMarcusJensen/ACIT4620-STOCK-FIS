@@ -53,14 +53,29 @@ class Wallet:
     def act(self, signal: Signal, price, index) -> tuple:
         match signal:
             case Signal.STRONGBUY:
-                return self.buy(price, index)
+                return self.buy(price, index, .4)
             case Signal.BUY:
-                return self.buy(price, index, .2)
+                return self.buy(price, index, .1)
             case Signal.SELL:
-                return self.sell(price, index, .2)
+                return self.sell(price, index, .1)
             case Signal.STRONGSELL:
-                return self.sell(price, index)
+                return self.sell(price, index, .4)
         return 0.0, 0
+    
+    def strongbuy(self, price, index, pct = 0.4):
+        buy_n_shares = (self.capital * pct) // price
+        if buy_n_shares < 1:
+            return 0.0, 0
+
+        transaction, cost = Transaction.create_buy(index, buy_n_shares, price)
+        self.transactions.append(transaction)
+
+        change = (-1 * cost) / self.capital
+        self.capital -= cost
+        self.capital -= self.comission
+        self.n_shares += buy_n_shares
+        return change, buy_n_shares
+
 
     def buy(self, price, index, pct=1.0) -> tuple:
         buy_n_shares = (self.capital * pct) // price
@@ -136,9 +151,11 @@ class Predictor:
     def __init__(self, sets: List[ctrl.Antecedent]):
         self.sets: Dict[str, ctrl.Antecedent] = {fs.label: fs for fs in sets}
         self.action = ctrl.Consequent(np.arange(0, 31, 1), 'action')
-        self.action['Sell'] = fuzz.trimf(self.action.universe, [0, 5, 10])
-        self.action['Hold'] = fuzz.trimf(self.action.universe, [10, 15, 20])
-        self.action['Buy'] = fuzz.trimf(self.action.universe, [20, 25, 30])
+        self.action['Strongsell'] = fuzz.trimf(self.action.universe, [0, 3, 6])
+        self.action['Sell'] = fuzz.trimf(self.action.universe, [6, 9, 12])
+        self.action['Hold'] = fuzz.trimf(self.action.universe, [12, 15, 18])
+        self.action['Buy'] = fuzz.trimf(self.action.universe, [18, 21, 24])
+        self.action['Strongbuy'] = fuzz.trimf(self.action.universe, [24, 27, 30])
 
         self.simulator: ctrl.ControlSystemSimulation = self.__construct_system()
 
@@ -181,10 +198,14 @@ class Predictor:
         return ctrl.ControlSystemSimulation(system)
 
     def __get_output_signal(self, value: float) -> Signal:
-        if value <= 10:
+        if value <= 8:
+            return Signal.STRONGSELL
+        elif value <= 11:
             return Signal.SELL
-        elif value >= 20:
+        elif value <= 19:
             return Signal.BUY
+        elif value <= 22:
+            return Signal.STRONGBUY
         else:
             return Signal.HOLD
 
