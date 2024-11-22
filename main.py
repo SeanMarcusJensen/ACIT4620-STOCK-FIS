@@ -197,6 +197,14 @@ class System:
         self.indicators = indicators
         self.fillna = fillna
 
+    def calculate_sharpe_ratio(self, returns: pd.Series, risk_free_rate: float = 0.0) -> float:
+        average_return = returns.mean()
+        std_return = returns.std()
+
+        sharpe_ratio = (average_return - risk_free_rate) / std_return
+
+        return sharpe_ratio
+
     def __call__(self, stock: Stock, print_mf: bool = False) -> pd.DataFrame:
         import time
         start = time.time()
@@ -235,7 +243,10 @@ class System:
         print(wallet.get_info(data['Close'].iloc[-1]))
         print(data.head())
 
-        return data
+        sharpe_ratio = self.calculate_sharpe_ratio(data['profits'].dropna())
+        print(f"Sharpe ratio: {sharpe_ratio}")
+
+        return data, sharpe_ratio
 
 
 if __name__ == "__main__":
@@ -248,13 +259,6 @@ if __name__ == "__main__":
         'VVV': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
     }
 
-    # STOCKS = {
-    #         'AAPL': [('1y', '1d')],
-    #         'AMZN': [('1y', '1d')],
-    #         'PLTR': [('1y', '1d')],
-    #         'VVV': [('1y',' 1d')],
-    #         }
-
     indicators = [
         RSI(period=14, magnitude=100),
         MACD(fast=12, slow=26, signal=9),
@@ -263,6 +267,9 @@ if __name__ == "__main__":
     ]
 
     system = System(indicators, fillna=None)
+
+    sharpe_ratio_evaluations = []
+
     for stock, intervals in STOCKS.items():
         for period, interval in intervals:
             directory = os.path.join(OUTPUT_FOLDER, interval)
@@ -270,6 +277,24 @@ if __name__ == "__main__":
                 os.makedirs(directory, exist_ok=True)
 
             STOCK = Stock(stock, interval=interval, period=period)
-            data = system(STOCK, print_mf=False)
+            data, sharpe_ratio = system(STOCK, print_mf=False)
+
+            start_datetime = data.index.min()
+            end_datetime = data.index.max()
+
+            sharpe_ratio_evaluations.append({
+                'Stock': stock,
+                'Interval': interval,
+                'Period': period,
+                'Start Time': start_datetime,
+                'End Time': end_datetime,
+                'Sharpe Ratio': sharpe_ratio
+            })
+
             save_path = os.path.join(directory, f'{stock}.csv')
             data.to_csv(save_path)
+
+    sharpe_ratios_df = pd.DataFrame(sharpe_ratio_evaluations)
+
+    sharpe_ratios_path = os.path.join(OUTPUT_FOLDER, 'sharpe_ratios.csv')
+    sharpe_ratios_df.to_csv(sharpe_ratios_path, index=False)
