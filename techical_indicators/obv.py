@@ -60,4 +60,9 @@ class OBV(Indicator):
         obv['Low'] = fuzz.gaussmf(obv.universe, low.mean(), low.std())
         obv['High'] = fuzz.gaussmf(obv.universe, high.mean(), high.std())
 
+        import matplotlib.pyplot as plt
+        obv.view()
+        plt.title("OBV")
+        plt.show()
+
         return obv

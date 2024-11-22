@@ -9,6 +9,8 @@ import skfuzzy.control as ctrl
 import matplotlib.pyplot as plt
 from techical_indicators import RSI, MACD, OBV, StochasticOscillator
 from dataclasses import dataclass
+from output.plotter import plot_profit
+
 
 
 class Signal(enum.Enum):
@@ -17,7 +19,6 @@ class Signal(enum.Enum):
     HOLD = 'hold'
     BUY = 'buy'
     STRONGBUY = 'strong_buy'
-
 
 @dataclass
 class Transaction:
@@ -173,24 +174,27 @@ class Predictor:
     def __construct_system(self):
 
         rules = [
-            ctrl.Rule(self['macd']['High'] & self['rsi']['Low'] & self['so']
-                      ['Low'] & self['obv']['High'],   self.action['Buy']),
-            ctrl.Rule(self['macd']['Low'] & self['rsi']['High'] & self['so']
-                      ['High'] & self['obv']['Low'],  self.action['Buy']),
-            ctrl.Rule(self['macd']['High'] & self['rsi']['Medium'] & self['so']
-                      ['Medium'] & self['obv']['High'],   self.action['Buy']),
-            ctrl.Rule(self['rsi']['Low'] & self['so']['Low'] &
-                      self['obv']['High'],  self.action['Buy']),
-            ctrl.Rule(self['macd']['Low'] & self['rsi']['Medium'] & self['so']
-                      ['High'] & self['obv']['Low'],   self.action['Sell']),
-            ctrl.Rule(self['rsi']['High'] & self['so']['High'] &
-                      self['obv']['Low'],  self.action['Sell']),
-            ctrl.Rule(self['macd']['Low'] & self['rsi']['High']
-                      & self['so']['High'],  self.action['Sell']),
-            ctrl.Rule(self['macd']['Low'] & self['rsi']['Medium']
-                      & self['so']['Medium'],   self.action['Hold']),
-            ctrl.Rule(self['macd']['High'] & self['rsi']['Medium'] & self['so']
-                      ['Medium'] & self['obv']['Low'],  self.action['Hold']),
+            # Strong Buy Conditions
+            ctrl.Rule(self['macd']['High'] & self['rsi']['Low'] & self['so']['Low'] & self['obv']['High'],   self.action['Strongbuy']),
+
+            # Buy Conditions
+            ctrl.Rule(self['macd']['High'] & self['rsi']['Medium'] & self['so']['Low'] & self['obv']['High'],   self.action['Buy']),
+            ctrl.Rule(self['macd']['High'] & self['rsi']['Low'] & self['so']['Medium'] & self['obv']['High'],   self.action['Buy']),
+            ctrl.Rule(self['macd']['High'] & self['rsi']['Low'] & self['so']['Low'] & self['obv']['Low'],   self.action['Buy']),
+
+            # Hold Conditions
+            ctrl.Rule(self['macd']['High'] & self['rsi']['Medium'] & self['so']['Medium'] & self['obv']['Low'],   self.action['Hold']),
+            ctrl.Rule(self['macd']['Low'] & self['rsi']['Medium'] & self['so']['Medium'] & self['obv']['High'],   self.action['Hold']),
+            ctrl.Rule(self['macd']['High'] & self['rsi']['High'] & self['so']['High'] & self['obv']['High'],   self.action['Hold']),
+            ctrl.Rule(self['macd']['Low'] & self['rsi']['Low'] & self['so']['Low'] & self['obv']['Low'],   self.action['Hold']),
+
+            # Sell Conditions
+            ctrl.Rule(self['macd']['Low'] & self['rsi']['High'] & self['so']['Medium'] & self['obv']['Low'],   self.action['Sell']),
+            ctrl.Rule(self['macd']['Low'] & self['rsi']['Medium'] & self['so']['High'] & self['obv']['Low'],   self.action['Sell']),
+            ctrl.Rule(self['macd']['Low'] & self['rsi']['High'] & self['so']['High'] & self['obv']['High'],   self.action['Sell']),
+
+            # Strong Sell Conditions
+            ctrl.Rule(self['macd']['Low'] & self['rsi']['High'] & self['so']['High'] & self['obv']['Low'],   self.action['Strongsell']),
         ]
 
         system = ctrl.ControlSystem(rules)
@@ -268,6 +272,8 @@ if __name__ == "__main__":
         'PLTR': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
         'VVV': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
     }
+
+    plot_profit('output')
 
     # STOCKS = {
     #         'AAPL': [('1y', '1d')],

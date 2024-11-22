@@ -51,4 +51,10 @@ class MACD(Indicator):
         macd = ctrl.Antecedent(np.linspace(macd_data.min(), macd_data.max(), len(macd_data)), self.name)
         macd['Low'] = fuzz.gaussmf(macd.universe, low.mean(), low.std())
         macd['High'] = fuzz.gaussmf(macd.universe, high.mean(), high.std())
+
+        import matplotlib.pyplot as plt
+        macd.view()
+        plt.title("MACD")
+        plt.show()
+
         return macd

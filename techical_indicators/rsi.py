@@ -46,5 +46,12 @@ class RSI(Indicator):
         rsi['Low'] = fuzz.gaussmf(rsi.universe, low.mean(), low.std())
         rsi['Medium'] = fuzz.gaussmf(rsi.universe, mid.mean(), mid.std())
         rsi['High'] = fuzz.gaussmf(rsi.universe, high.mean(), high.std())
+
+        import matplotlib.pyplot as plt
+        rsi.view()
+
+        plt.title("RSI")
+        plt.show()
+
         return rsi
 

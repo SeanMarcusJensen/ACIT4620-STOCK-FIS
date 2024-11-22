@@ -46,4 +46,12 @@ class StochasticOscillator(Indicator):
         so['Low'] = fuzz.gaussmf(so.universe, low.mean(), low.std())
         so['Medium'] = fuzz.gaussmf(so.universe, mid.mean(), mid.std())
         so['High'] = fuzz.gaussmf(so.universe, high.mean(), high.std())
+
+        import matplotlib.pyplot as plt
+        so.view()
+        plt.title("SO")
+        plt.show()
+
         return so
+    
+        
