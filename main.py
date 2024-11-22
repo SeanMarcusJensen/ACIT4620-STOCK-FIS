@@ -160,6 +160,22 @@ class Predictor:
 
         self.simulator: ctrl.ControlSystemSimulation = self.__construct_system()
 
+        plt.figure(figsize=(10, 6))
+        plt.plot(self.action.universe, fuzz.trimf(self.action.universe, [0, 3, 6]), label='Strong Sell', linewidth=2)
+        plt.plot(self.action.universe, fuzz.trimf(self.action.universe, [6, 9, 12]), label='Sell', linewidth=2)
+        plt.plot(self.action.universe, fuzz.trimf(self.action.universe, [12, 15, 18]), label='Hold', linewidth=2)
+        plt.plot(self.action.universe, fuzz.trimf(self.action.universe, [18, 21, 24]), label='Buy', linewidth=2)
+        plt.plot(self.action.universe, fuzz.trimf(self.action.universe, [24, 27, 30]), label='Strong Buy', linewidth=2)
+
+        plt.title('Membership Functions for Trading Actions')
+        plt.xlabel('Action Intensity')
+        plt.ylabel('Membership Degree')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+        
+
     def get_signal(self, series: pd.Series, plot_signal: bool = False) -> Signal:
         self.simulator.inputs({name: series[name]
                               for name in self.sets.keys()})
