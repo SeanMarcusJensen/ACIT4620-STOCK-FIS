@@ -5,8 +5,6 @@ import pandas as pd
 from typing import List, Dict
 from techical_indicators.abstraction import Indicator
 from models import Stock
-from utils import DateChunker
-import pandas as pd
 import skfuzzy.control as ctrl
 import matplotlib.pyplot as plt
 from techical_indicators import RSI, MACD, OBV, StochasticOscillator
