@@ -4,7 +4,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 def plot_buy_sell_signals(data, title: str):
     plt.figure(figsize=(18,4))
-    plt.plot(data['Close'], color='blue', label='Close price', zorder=1)
+    plt.plot(data['Close'], color='lightgray', label='Close price', zorder=1)
     sell = data.loc[data['action'] == 'sell']
     buy = data.loc[data['action'] == 'buy']
 
@@ -24,7 +24,7 @@ def plot_buy_sell_signals(data, title: str):
 
 def plot_buy_sell_actions(data, title: str):
     plt.figure(figsize=(18,4))
-    plt.plot(data['Close'], color='blue', label='Close price', zorder=1)
+    plt.plot(data['Close'], color='lightgray', label='Close price', zorder=1)
     sell = data.loc[(data['action'] == 'sell') & (data['change_pct'] != 0)]
     buy = data.loc[(data['action'] == 'buy') & (data['change_pct'] != 0)]
 
@@ -63,10 +63,10 @@ def plot_indicators(data, title: str):
         plt.plot(data['Datetime'], normalized_df[column], label=column)
 
     plt.xlabel("Time")
-    plt.ylabel("Normalized")
+    plt.ylabel("Normalized Values")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
+    plt.tick_params(labelbottom=False)
     plt.title(title)
-    plt.gca().set_xlabel([])
     plt.show()
