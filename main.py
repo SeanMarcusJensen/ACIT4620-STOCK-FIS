@@ -261,13 +261,6 @@ if __name__ == "__main__":
         'VVV': [('1d', '5m'), ('1d', '15m'), ('1y', '1d')],
     }
 
-    # STOCKS = {
-    #         'AAPL': [('1y', '1d')],
-    #         'AMZN': [('1y', '1d')],
-    #         'PLTR': [('1y', '1d')],
-    #         'VVV': [('1y',' 1d')],
-    #         }
-
     indicators = [
         RSI(period=14, magnitude=100),
         MACD(fast=12, slow=26, signal=9),
