@@ -152,7 +152,7 @@ class Predictor:
         plt.ylabel('Membership Degree')
         plt.legend()
         plt.grid(True)
-        plt.show()
+        #plt.show()
 
 
     def get_signal(self, series: pd.Series, plot_signal: bool = False) -> Signal:
