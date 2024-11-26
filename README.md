@@ -18,5 +18,5 @@ All stock data is downloaded and metrics generated through the `main.py` file. T
 
 More detailed graphs and statistical analysis is done in the `main.ipynb` Jupyter Notebook file.
 
-If you do want to try the system out with stocks of your choice, then feel free to modify the stock selection in the bottom of the `main.py` file before running. Though, some modifications to the notebook is required also..
+If you do want to try the system out with stocks of your choice, then feel free to modify the stock selection in the bottom of the `main.py` file before running. Though, some modifications to the notebook is required also.
 
